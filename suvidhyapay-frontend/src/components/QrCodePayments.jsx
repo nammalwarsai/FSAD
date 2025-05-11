@@ -130,7 +130,6 @@ const QrCodePayments = () => {
       alert('Failed to generate PDF. Please try again.');
     }
   };
-
   const saveTransaction = async () => {
     try {
       const userId = localStorage.getItem('userId');
@@ -146,6 +145,13 @@ const QrCodePayments = () => {
 
       setIsSaving(true);
 
+      console.log('Saving transaction with data:', {
+        userId,
+        phoneNumber,
+        amount,
+        provider
+      });
+
       const response = await api.post('/api/transactions/save', {
         userId: parseInt(userId),
         recipientNumber: phoneNumber,
@@ -154,21 +160,32 @@ const QrCodePayments = () => {
         transactionType: 'QR_PAYMENT',
         status: 'COMPLETED',
         upiId: generateUpiId()
+      }, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
 
       if (response.data) {
         toast.success('Transaction saved successfully');
-      }
-    } catch (error) {
+      }    } catch (error) {
       console.error('Error saving transaction:', error);
-      if (error.response?.status === 400) {
+      if (!error.response) {
+        // Network error
+        toast.error('Cannot connect to server. Please check if the backend server is running at http://localhost:8080');
+        console.error('Network Error Details:', error);
+      } else if (error.response?.status === 400) {
         toast.error('Invalid transaction data. Please check your inputs.');
       } else if (error.response?.status === 401) {
         toast.error('Please login again to continue');
+        // Redirect to login if unauthorized
+        window.location.href = '/login';
       } else if (error.response?.status === 500) {
         toast.error('Server error. Please try again later.');
+        console.error('Server Error Details:', error.response.data);
       } else {
         toast.error(error.response?.data?.error || 'Error saving transaction');
+        console.error('Other Error Details:', error.response?.data);
       }
     } finally {
       setIsSaving(false);

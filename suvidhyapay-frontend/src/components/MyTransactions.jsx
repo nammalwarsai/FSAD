@@ -20,10 +20,16 @@ const MyTransactions = () => {
                 }
 
                 const response = await api.get(`/api/transactions/user/${userId}`);
-                setTransactions(response.data);
-            } catch (error) {
+                setTransactions(response.data);            } catch (error) {
                 console.error('Error fetching transactions:', error);
-                toast.error(error.response?.data?.error || 'Error fetching transactions');
+                if (!error.response) {
+                    toast.error('Network error - Please check if the backend server is running on port 8080');
+                } else {
+                    toast.error(error.response?.data?.error || 'Error fetching transactions');
+                }
+                if (error.response?.status === 401) {
+                    navigate('/login');
+                }
             } finally {
                 setLoading(false);
             }
@@ -48,9 +54,8 @@ const MyTransactions = () => {
                         <FaHistory className="text-blue-600 text-2xl" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-800 mb-2">No Transactions Yet</h2>
-                    <p className="text-gray-600 mb-6">Start making payments using our QR Code payment feature to see your transaction history here.</p>
-                    <button
-                        onClick={() => navigate('/qr-payments')}
+                    <p className="text-gray-600 mb-6">Start making payments using our QR Code payment feature to see your transaction history here.</p>                    <button
+                        onClick={() => navigate('/dashboard/qr-payments')}
                         className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
                     >
                         Make a Payment
